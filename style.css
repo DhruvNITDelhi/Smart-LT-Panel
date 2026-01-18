@@ -1,18 +1,7 @@
 body {
   font-family: Arial, sans-serif;
-  margin: 0;
   padding: 20px;
   background: #f5f7fa;
-  color: #222;
-}
-
-h1 {
-  margin-bottom: 5px;
-}
-
-.subtitle {
-  margin-bottom: 20px;
-  color: #555;
 }
 
 .container {
@@ -22,51 +11,32 @@ h1 {
 
 .configurator {
   width: 40%;
-  background: #ffffff;
+  background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .viewer {
   width: 60%;
-  height: 500px;
-  background: #ffffff;
+  background: white;
+  padding: 20px;
   border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.field {
-  margin-bottom: 15px;
 }
 
 label {
   display: block;
-  margin-bottom: 5px;
+  margin-top: 10px;
   font-weight: bold;
 }
 
 select {
   width: 100%;
   padding: 8px;
-  font-size: 14px;
-}
-
-.price-box {
-  margin-top: 20px;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-#totalPrice {
-  font-size: 22px;
   margin-top: 5px;
-  color: #0a7cff;
 }
 
 button {
-  margin-top: 20px;
+  margin-top: 15px;
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -77,6 +47,43 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #055ec0;
+canvas {
+  border: 1px solid #ccc;
+}
+
+/* PDF PRINT */
+#pdfSection {
+  display: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  border: 1px solid #aaa;
+  padding: 8px;
+}
+
+.note {
+  font-size: 12px;
+  margin-top: 20px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #pdfSection, #pdfSection * {
+    visibility: visible;
+  }
+  #pdfSection {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 40px;
+  }
 }
