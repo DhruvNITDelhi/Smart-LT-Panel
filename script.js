@@ -1,112 +1,158 @@
-const incomer = document.getElementById("incomer");
-const busbar = document.getElementById("busbar");
-const meter = document.getElementById("meter");
-const enclosure = document.getElementById("enclosure");
+/***********************
+ * DOM REFERENCES
+ ***********************/
+const inverterRating = document.getElementById("inverterRating");
+const inverterCount = document.getElementById("inverterCount");
+const outputVoltage = document.getElementById("outputVoltage");
+const suggestedConfig = document.getElementById("suggestedConfig");
+const attachmentLink = document.getElementById("attachmentLink");
 
-const subTotalEl = document.getElementById("subTotal");
-const gstEl = document.getElementById("gstAmount");
-const totalEl = document.getElementById("totalPrice");
-
-const canvas = document.getElementById("liveCanvas");
+const canvas = document.getElementById("pccCanvas");
 const ctx = canvas.getContext("2d");
 
-function price(sel) {
-  return Number(sel.selectedOptions[0].dataset.price);
-}
+/***********************
+ * PCC LAYOUT DRAWING
+ ***********************/
+function drawPCCLayout(totalKW, feederCount, incomerType) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function generateQuoteNo() {
-  return "PCC-" + Date.now().toString().slice(-6);
-}
+  ctx.fillStyle = "#f2f2f2";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-function drawPanel(ctxRef) {
-  ctxRef.clearRect(0, 0, 300, 500);
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.fillRect(30, 20, 260, 470);
+  ctx.strokeRect(30, 20, 260, 470);
 
-  ctxRef.fillStyle = "#f2f2f2";
-  ctxRef.fillRect(0, 0, 300, 500);
+  ctx.font = "12px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#000";
+  ctx.fillText("PCC PANEL", 160, 12);
 
-  ctxRef.fillStyle = "#fff";
-  ctxRef.strokeStyle = "#000";
-  ctxRef.lineWidth = 2;
-  ctxRef.fillRect(30, 20, 240, 460);
-  ctxRef.strokeRect(30, 20, 240, 460);
+  ctx.fillStyle = "#999";
+  ctx.fillRect(60, 45, 200, 16);
+  ctx.fillStyle = "#000";
+  ctx.fillText("MAIN BUSBAR", 160, 35);
 
-  // Busbar
-  ctxRef.fillStyle = busbar.value === "CU" ? "#b87333" : "#999";
-  ctxRef.fillRect(50, 40, 200, 18);
+  ctx.fillStyle = "#555";
+  ctx.fillRect(90, 80, 140, 55);
+  ctx.fillStyle = "#fff";
+  ctx.fillText(incomerType, 160, 108);
 
-  // Incomer
-  ctxRef.fillStyle = "#555";
-  if (incomer.value === "ACB") {
-    ctxRef.fillRect(80, 80, 140, 60);
-    ctxRef.fillStyle = "#fff";
-    ctxRef.fillText("ACB", 135, 115);
-  } else {
-    ctxRef.fillRect(100, 90, 100, 40);
-    ctxRef.fillStyle = "#fff";
-    ctxRef.fillText("MCCB", 125, 115);
+  const startY = 160;
+  const feederHeight = 35;
+  const spacing = 10;
+
+  for (let i = 0; i < Math.min(feederCount, 6); i++) {
+    ctx.fillStyle = "#2fa4a9";
+    ctx.fillRect(
+      80,
+      startY + i * (feederHeight + spacing),
+      160,
+      feederHeight
+    );
+    ctx.fillStyle = "#fff";
+    ctx.fillText(
+      `Inverter Feeder ${i + 1}`,
+      160,
+      startY + i * (feederHeight + spacing) + feederHeight / 2
+    );
   }
 
-  // Meter
-  ctxRef.fillStyle = "#2fa4a9";
-  ctxRef.fillRect(100, 170, 100, 60);
-  ctxRef.fillStyle = "#fff";
-  ctxRef.fillText(meter.value === "SMART" ? "Smart Meter" : "Energy Meter", 95, 205);
-
-  // Company Logo (text placeholder)
-  ctxRef.fillStyle = "#000";
-  ctxRef.font = "10px Arial";
-  ctxRef.fillText("AlphaLoop Solar LLP", 170, 470);
+  ctx.font = "10px Arial";
+  ctx.fillStyle = "#000";
+  ctx.fillText("LOOP SOLAR | Indicative Layout", 160, 485);
 }
 
-function update() {
-  const subTotal =
-    price(incomer) +
-    price(busbar) +
-    price(meter) +
-    price(enclosure);
+/***********************
+ * CONFIGURATION LOGIC
+ ***********************/
+function suggestConfiguration() {
+  const rating = Number(inverterRating.value);
+  const count = Number(inverterCount.value);
+  const voltage = Number(outputVoltage.value);
 
-  const gst = Math.round(subTotal * 0.18);
-  const total = subTotal + gst;
+  if (!rating || !count || !voltage) {
+    suggestedConfig.innerHTML =
+      "<p><b>Note:</b> Please choose inverter configuration.</p>";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
 
-  subTotalEl.textContent = "₹" + subTotal.toLocaleString("en-IN");
-  gstEl.textContent = "₹" + gst.toLocaleString("en-IN");
-  totalEl.textContent = "₹" + total.toLocaleString("en-IN");
+  const totalKW = rating * count;
+  const current = (totalKW * 1000) / (Math.sqrt(3) * voltage);
 
-  drawPanel(ctx);
-}
+  const incomer =
+    current < 630 ? "MCCB" :
+    current < 1000 ? "ACB" :
+    "ACB (High Rating)";
 
-[incomer, busbar, meter, enclosure].forEach(el =>
-  el.addEventListener("change", update)
-);
-
-update();
-
-/* PDF */
-document.getElementById("pdfBtn").addEventListener("click", () => {
-  const quoteNo = generateQuoteNo();
-
-  document.getElementById("pdfDate").textContent =
-    new Date().toLocaleDateString("en-IN");
-  document.getElementById("pdfQuoteNo").textContent = quoteNo;
-
-  document.getElementById("pdfSubTotal").textContent = subTotalEl.textContent;
-  document.getElementById("pdfGST").textContent = gstEl.textContent;
-  document.getElementById("pdfTotal").textContent = totalEl.textContent;
-
-  document.getElementById("pdfBom").innerHTML = `
-    <tr><td>Incomer</td><td>${incomer.selectedOptions[0].text}</td><td>₹${price(incomer)}</td></tr>
-    <tr><td>Busbar</td><td>${busbar.selectedOptions[0].text}</td><td>₹${price(busbar)}</td></tr>
-    <tr><td>Metering</td><td>${meter.selectedOptions[0].text}</td><td>₹${price(meter)}</td></tr>
-    <tr><td>Enclosure</td><td>${enclosure.selectedOptions[0].text}</td><td>₹${price(enclosure)}</td></tr>
+  suggestedConfig.innerHTML = `
+    <p><b>Total Inverter Capacity:</b> ${totalKW} kW</p>
+    <p><b>System Voltage:</b> ${voltage} V</p>
+    <p><b>Indicative AC Current:</b> ~${Math.round(current)} A</p>
+    <hr>
+    <p><b>Suggested Incomer:</b> ${incomer}</p>
+    <p><b>Outgoing Feeders:</b> ${count} × inverter feeders</p>
+    <p style="font-size:12px;">*Indicative only</p>
   `;
 
-  document.getElementById("pdfSection").style.display = "block";
-  drawPanel(document.getElementById("pdfCanvas").getContext("2d"));
-  window.print();
-  document.getElementById("pdfSection").style.display = "none";
-});
+  drawPCCLayout(totalKW, count, incomer);
+}
 
-/* Redirect */
-document.getElementById("quoteBtn").addEventListener("click", () => {
-  window.location.href = "https://dhruvnitdelhi.github.io/Smart-LT-Panel/";
-});
+[inverterRating, inverterCount, outputVoltage]
+  .forEach(el => el.addEventListener("input", suggestConfiguration));
+
+/***********************
+ * FORM SUBMIT HANDLER
+ ***********************/
+function prepareAndSubmit() {
+
+  // Validation
+  if (!customerName.value || !customerEmail.value || !customerPhone.value) {
+    alert("Please fill customer contact details.");
+    return false;
+  }
+
+  // Copy values to hidden form fields
+  f_customerName.value = customerName.value;
+  f_customerEmail.value = customerEmail.value;
+  f_customerPhone.value = customerPhone.value;
+  f_customerCompany.value = customerCompany.value;
+
+  f_projectType.value = projectType.value;
+  f_plantCapacity.value = plantCapacity.value;
+  f_inverterBrand.value = inverterBrand.value;
+  f_inverterRating.value = inverterRating.value;
+  f_inverterCount.value = inverterCount.value;
+  f_voltage.value = outputVoltage.value;
+  f_gridType.value = gridType.value;
+  f_metering.value = metering.value;
+  f_equipmentBrand.value = equipmentBrand.value;
+
+  f_suggestedConfig.value = suggestedConfig.innerText;
+  f_customNotes.value = customNotes.value;
+
+  // ⭐ Attachment link
+  f_attachmentLink.value = attachmentLink.value;
+
+  return true; // ✅ VERY IMPORTANT
+}
+
+
+function handleSubmit() {
+  // pehle wala kaam karwao
+  const ok = prepareAndSubmit();
+  if (!ok) return false;
+
+  // success message dikhao
+  document.getElementById("successBox").style.display = "block";
+
+  // button disable (optional)
+  document.getElementById("requestQuoteBtn").disabled = true;
+
+  return true; // form iframe me submit hoga
+}
+
