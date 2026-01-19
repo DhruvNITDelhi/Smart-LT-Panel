@@ -1,25 +1,27 @@
 body {
   font-family: Arial, sans-serif;
+  background: #f6f8fa;
+  margin: 0;
   padding: 20px;
-  background: #f5f7fa;
+}
+
+header {
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin-bottom: 5px;
 }
 
 .container {
-  display: flex;
-  gap: 20px;
+  max-width: 900px;
+  margin: auto;
 }
 
-.configurator {
-  width: 40%;
-  background: white;
+section {
+  background: #ffffff;
   padding: 20px;
-  border-radius: 8px;
-}
-
-.viewer {
-  width: 60%;
-  background: white;
-  padding: 20px;
+  margin-bottom: 15px;
   border-radius: 8px;
 }
 
@@ -29,16 +31,28 @@ label {
   font-weight: bold;
 }
 
-select {
+input, select, textarea {
   width: 100%;
   padding: 8px;
   margin-top: 5px;
 }
 
+.suggestion {
+  border-left: 5px solid #0a7cff;
+}
+
+#suggestedConfig {
+  background: #f0f6ff;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.cta {
+  text-align: center;
+}
+
 button {
-  margin-top: 15px;
-  width: 100%;
-  padding: 12px;
+  padding: 12px 30px;
   font-size: 16px;
   background: #0a7cff;
   color: white;
@@ -49,41 +63,6 @@ button {
 
 canvas {
   border: 1px solid #ccc;
-}
-
-/* PDF PRINT */
-#pdfSection {
-  display: none;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
+  background: #f7f7f7;
   margin-top: 10px;
-}
-
-th, td {
-  border: 1px solid #aaa;
-  padding: 8px;
-}
-
-.note {
-  font-size: 12px;
-  margin-top: 20px;
-}
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #pdfSection, #pdfSection * {
-    visibility: visible;
-  }
-  #pdfSection {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 40px;
-  }
 }
