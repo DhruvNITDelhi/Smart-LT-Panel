@@ -2,94 +2,196 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PCC Panel Configurator</title>
+  <title>Solar LT Panel Configurator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>PCC Panel Configurator</h1>
-<p>Configure your PCC panel and see estimated pricing instantly</p>
+<header>
+  <h1>Solar LT Panel Configuration Assistant</h1>
+  <p>Tell us about your solar plant. We’ll suggest the right LT / PCC panel configuration.</p>
+</header>
 
 <div class="container">
 
-  <div class="configurator">
+  <!-- SECTION 1 -->
+  <section>
+    <h2>1. Project Overview</h2>
 
-    <label>Incomer</label>
-    <select id="incomer">
-      <option value="MCCB" data-price="18000">400A MCCB (₹18,000)</option>
-      <option value="ACB" data-price="65000">630A ACB (₹65,000)</option>
+    <label>Project Type</label>
+    <select id="projectType">
+      <option>Commercial Rooftop</option>
+      <option>Industrial Rooftop</option>
+      <option>Ground Mounted Solar</option>
+      <option>Hybrid (Solar + DG / Battery)</option>
     </select>
 
-    <label>Busbar</label>
-    <select id="busbar">
-      <option value="AL" data-price="12000">Aluminium (₹12,000)</option>
-      <option value="CU" data-price="28000">Copper (₹28,000)</option>
+    <label>Total Solar Capacity (kW)</label>
+    <input type="number" id="plantCapacity" placeholder="e.g. 500">
+  </section>
+
+  <!-- SECTION 2 -->
+  <section>
+    <h2>2. Inverter Details</h2>
+
+    <label>Inverter Brand</label>
+    <select id="inverterBrand">
+      <option>Sungrow</option>
+      <option>SMA</option>
+      <option>Huawei</option>
+      <option>Delta</option>
+      <option>Other</option>
     </select>
 
-    <label>Metering</label>
-    <select id="meter">
-      <option value="ENERGY" data-price="15000">Energy Metering (₹15,000)</option>
-      <option value="SMART" data-price="25000">Smart Metering (₹25,000)</option>
+    <label>Inverter Rating (kW)</label>
+    <input type="number" id="inverterRating" placeholder="e.g. 100">
+
+    <label>Number of Inverters</label>
+    <input type="number" id="inverterCount" placeholder="e.g. 5">
+
+    <label>Inverter Output Voltage</label>
+    <select id="outputVoltage">
+      <option value="415">415 V AC</option>
+      <option value="690">690 V AC</option>
+    </select>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section>
+    <h2>3. Grid & Metering</h2>
+
+    <label>Grid Interaction</label>
+    <select id="gridType">
+      <option>Solar Only</option>
+      <option>Solar + Grid</option>
+      <option>Solar + Grid + DG</option>
+      <option>Solar + Grid + Battery</option>
     </select>
 
-    <label>Enclosure</label>
-    <select id="enclosure">
-      <option value="INDOOR" data-price="10000">Indoor IP42 (₹10,000)</option>
-      <option value="OUTDOOR" data-price="18000">Outdoor IP54 (₹18,000)</option>
+    <label>Metering Requirement</label>
+    <select id="metering">
+      <option>Net Meter Only</option>
+      <option>Solar Generation Meter</option>
+      <option>Smart Meter with Remote Monitoring</option>
     </select>
 
-    <h3>Subtotal: <span id="subTotal">₹0</span></h3>
-    <h3>GST (18%): <span id="gstAmount">₹0</span></h3>
-    <h2>Total Price: <span id="totalPrice">₹0</span></h2>
+    <label>Preferred Equipment Brand</label>
+    <select id="equipmentBrand">
+      <option>Schneider</option>
+      <option>ABB</option>
+      <option>Havells</option>
+      <option>L&T</option>
+      <option>Open to Equivalent</option>
+    </select>
+  </section>
 
-    <button id="pdfBtn">Download PDF</button>
-    <button id="quoteBtn">Request Quotation</button>
-  </div>
+  <!-- SECTION 4 -->
+  <section class="suggestion">
+    <h2>Suggested LT / PCC Panel Configuration</h2>
 
-  <div class="viewer">
-    <canvas id="liveCanvas" width="300" height="500"></canvas>
-  </div>
+    <section>
+  <h2>Indicative PCC Panel Layout (Front View)</h2>
+  <p style="font-size:12px;color:#555">
+    For representation only. Final layout subject to engineering validation.
+  </p>
 
+  <canvas id="pccCanvas" width="320" height="520"></canvas>
+</section>
+
+
+    <div id="suggestedConfig">
+      <p><b>Note:</b> Fill inverter details to see suggested configuration.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section>
+    <h2>Additional / Custom Requirements (Optional)</h2>
+
+    <textarea id="customNotes" rows="4"
+      placeholder="Mention any special requirement not covered above (specific make, future expansion, utility requirement, space constraint, etc.)">
+    </textarea>
+  </section>
+
+  <section>
+  <h2>Customer Contact Details</h2>
+
+  <label>Full Name</label>
+  <input type="text" id="customerName" required>
+
+  <label>Email</label>
+  <input type="email" id="customerEmail" required>
+
+  <label>Phone Number</label>
+  <input type="tel" id="customerPhone" required>
+
+  <label>Company / Organization</label>
+  <input type="text" id="customerCompany">
+</section>
+
+<section>
+  <h2>Attach SLD / Documents (Optional)</h2>
+
+  <label>SLD / Document Google Drive Link</label>
+  <input
+    type="url"
+    id="attachmentLink"
+    placeholder="https://drive.google.com/..."
+  >
+</section>
+
+
+  <!-- SECTION 6 -->
+  <section class="cta">
+  <form
+    method="POST"
+    action="https://script.google.com/macros/s/AKfycbw_4AjWcitiM_7JKOmv7fIXMJHAIj9VypsoVlgNIM5d4a2XLHPfPDlkBmrBi5-1lbzp/exec"
+    target="hidden_iframe"
+    onsubmit="return handleSubmit()"
+  >
+    <!-- hidden fields -->
+    <input type="hidden" name="customerName" id="f_customerName">
+    <input type="hidden" name="customerEmail" id="f_customerEmail">
+    <input type="hidden" name="customerPhone" id="f_customerPhone">
+    <input type="hidden" name="customerCompany" id="f_customerCompany">
+
+    <input type="hidden" name="projectType" id="f_projectType">
+    <input type="hidden" name="plantCapacity" id="f_plantCapacity">
+    <input type="hidden" name="inverterBrand" id="f_inverterBrand">
+    <input type="hidden" name="inverterRating" id="f_inverterRating">
+    <input type="hidden" name="inverterCount" id="f_inverterCount">
+    <input type="hidden" name="voltage" id="f_voltage">
+    <input type="hidden" name="gridType" id="f_gridType">
+    <input type="hidden" name="metering" id="f_metering">
+    <input type="hidden" name="equipmentBrand" id="f_equipmentBrand">
+    <input type="hidden" name="suggestedConfig" id="f_suggestedConfig">
+    <input type="hidden" name="customNotes" id="f_customNotes">
+    <input type="hidden" name="attachmentLink" id="f_attachmentLink">
+
+    <button type="submit" id="requestQuoteBtn">
+      Request Engineering Quote
+    </button>
+
+<div id="successBox" style="display:none; margin-top:15px; padding:15px; background:#e8f4ff; border:1px solid #0a7cff; border-radius:6px;">
+  <b>✅ Request Submitted Successfully</b><br><br>
+  Your details have been submitted successfully.<br>
+  Our team will reach out to you soon to discuss and finalise the order.
 </div>
 
-<!-- PDF SECTION -->
-<div id="pdfSection">
-  <h2>SMART LT PANEL SOLUTIONS</h2>
-  <p><b>PCC Panel – Quotation</b></p>
 
-  <p>
-    <b>Date:</b> <span id="pdfDate"></span><br>
-    <b>Quotation No:</b> <span id="pdfQuoteNo"></span>
-  </p>
+  </form>
+</section>
 
-  <hr>
 
-  <h3>Bill of Materials</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Component</th>
-        <th>Selection</th>
-        <th>Price (₹)</th>
-      </tr>
-    </thead>
-    <tbody id="pdfBom"></tbody>
-  </table>
-
-  <h3 style="margin-top:15px">
-    Subtotal: <span id="pdfSubTotal"></span><br>
-    GST (18%): <span id="pdfGST"></span><br>
-    <b>Total: <span id="pdfTotal"></span></b>
-  </h3>
-
-  <h3>Panel Layout (Front View)</h3>
-  <canvas id="pdfCanvas" width="300" height="500"></canvas>
-
-  <p class="note">
-    *Indicative pricing. Final quotation subject to engineering review.
-  </p>
 </div>
 
 <script src="script.js"></script>
+
+<iframe
+  name="hidden_iframe"
+  style="display:none;"
+></iframe>
+
+
 </body>
 </html>
