@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loop Solar | Panel Design Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        loopOrange: '#F75900',
+                        loopGreen: '#2E8B57',
+                        footerBg: '#222222',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+        .busbar-gradient { background: linear-gradient(90deg, #ef4444, #eab308, #3b82f6); opacity: 0.8; }
+        .extension-pattern { background-image: repeating-linear-gradient(45deg, #fbbf24 0, #fbbf24 5px, transparent 5px, transparent 10px); }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .step-card { transition: all 0.3s ease; border: 2px solid transparent; }
+        .step-card:hover { transform: translateY(-3px); border-color: #F75900; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .step-active { border-color: #F75900; background-color: #fff7ed; transform: scale(1.02); }
+        
+        /* Loader */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #F75900; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="h-10 w-auto flex items-center">
+                    <img src="https://loopsolar.com/static/images/site/logo.png" alt="Loop Solar" class="h-10 object-contain"> 
+                </div>
+                <div class="hidden md:block pl-3 border-l border-gray-300 ml-3">
+                    <h1 class="text-lg font-bold text-gray-800 tracking-tight leading-none">Panel Studio</h1>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Configurator</p>
+                </div>
+            </div>
+            <button onclick="window.location.reload()" class="text-gray-500 hover:text-loopOrange text-sm font-medium">
+                <i class="fa-solid fa-rotate-right mr-1"></i> Start Over
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 max-w-5xl">
+
+        <section id="section_scenario" class="mb-12 animate-fade-in pb-10">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Start Project Configuration</h2>
+                <p class="text-gray-500 mt-2">Select your project type to load the relevant engineering standards.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm step-card cursor-pointer" onclick="toggleSubOptions('solar', this)">
+                    <div class="text-3xl text-green-600 mb-3"><i class="fa-solid fa-solar-panel"></i></div>
+                    <h3 class="font-bold text-lg">Installing Solar / BESS</h3>
+                    <p class="text-sm text-gray-500">Adding solar to a building.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm step-card cursor-pointer" onclick="toggleSubOptions('construction', this)">
+                    <div class="text-3xl text-blue-600 mb-3"><i class="fa-solid fa-helmet-safety"></i></div>
+                    <h3 class="font-bold text-lg">Construction / Expansion</h3>
+                    <p class="text-sm text-gray-500">New building or load expansion.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm step-card cursor-pointer" onclick="toggleSubOptions('ground', this)">
+                    <div class="text-3xl text-orange-600 mb-3"><i class="fa-solid fa-earth-americas"></i></div>
+                    <h3 class="font-bold text-lg">Ground Mount</h3>
+                    <p class="text-sm text-gray-500">Solar parks or captive plants.</p>
+                </div>
+            </div>
+
+            <div id="scrollTarget" class="scroll-mt-24">
+                <div id="subOptionsContainer" class="hidden bg-orange-50 p-6 rounded-xl border-2 border-dashed border-loopOrange/30 text-center animate-fade-in shadow-inner">
+                    <h4 id="subOptionTitle" class="font-bold text-gray-800 mb-4 text-lg">Select Specific Requirement:</h4>
+                    <div id="subButtons" class="flex flex-wrap justify-center gap-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="section_form" class="hidden mb-12 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-lg text-gray-800">Technical Parameters</h3>
+                        <p id="formContext" class="text-xs text-loopOrange font-bold uppercase tracking-wide">Standard Config</p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-bold">Step 2 of 3</span>
+                </div>
+
+                <div class="p-6 md:p-8 space-y-8">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <h4 class="font-bold text-gray-700 border-b pb-2 text-sm">System Specs</h4>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Grid Voltage</label>
+                                <select id="voltage" class="w-full border border-gray-300 p-2.5 rounded-lg focus:border-loopOrange outline-none">
+                                    <option value="415">415V (3-Phase LT)</option>
+                                    <option value="800">800V (String Inverter)</option>
+                                    <option value="230">230V (1-Phase)</option>
+                                </select>
+                            </div>
+                            
+                            <div id="field_sysType">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Connection Type</label>
+                                <select id="sysType" class="w-full border border-gray-300 p-2.5 rounded-lg focus:border-loopOrange outline-none">
+                                    <option value="On-Grid">On-Grid (Net Meter)</option>
+                                    <option value="Hybrid">Hybrid (Battery Backup)</option>
+                                    <option value="Off-Grid">Off-Grid (Island Mode)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h4 class="font-bold text-gray-700 border-b pb-2 text-sm">Load / Generation</h4>
+                            
+                            <div id="group_solar" class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">Solar Plant (kWp)</label>
+                                    <input type="number" id="plantCapacity" class="w-full border border-gray-300 p-2.5 rounded-lg" placeholder="e.g. 50">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">No. of Inverters</label>
+                                    <input type="number" id="invQty" value="1" class="w-full border border-gray-300 p-2.5 rounded-lg">
+                                </div>
+                            </div>
+
+                            <div id="group_load" class="hidden">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Total Connected Load (kW)</label>
+                                <input type="number" id="loadCapacity" class="w-full border border-gray-300 p-2.5 rounded-lg" placeholder="Total Load">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-gray-700 border-b pb-2 text-sm">Construction & Cabling</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Install Location</label>
+                                <select id="location" class="w-full border border-gray-300 p-2.5 rounded-lg">
+                                    <option value="Indoor">Indoor (IP54)</option>
+                                    <option value="Outdoor">Outdoor (IP65)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Cable Entry</label>
+                                <select id="cableEntry" class="w-full border border-gray-300 p-2.5 rounded-lg">
+                                    <option value="Bottom">Bottom</option>
+                                    <option value="Top">Top</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Expansion?</label>
+                                <select id="isExpansion" class="w-full border border-gray-300 p-2.5 rounded-lg">
+                                    <option value="No">No (Standalone)</option>
+                                    <option value="Yes">Yes (Add Extension Links)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                        <h4 class="font-bold text-loopOrange mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-microchip"></i> Select Smart Features
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <label class="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:border-loopOrange">
+                                <input type="checkbox" id="feat_iot" checked class="accent-loopOrange w-4 h-4">
+                                <span>Live Remote Monitoring (IoT)</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:border-loopOrange">
+                                <input type="checkbox" id="feat_dg" class="accent-loopOrange w-4 h-4">
+                                <span>DG Sync / Reverse Power Relay</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:border-loopOrange">
+                                <input type="checkbox" id="feat_fire" class="accent-loopOrange w-4 h-4">
+                                <span>Fire Suppression (Aerosol)</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:border-loopOrange">
+                                <input type="checkbox" id="feat_spd" checked class="accent-loopOrange w-4 h-4">
+                                <span>AC Surge Protection (SPD)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4">
+                        <button onclick="generateResult()" class="bg-loopOrange hover:bg-orange-600 text-white text-lg font-bold py-3 px-10 rounded-xl shadow-lg transform hover:scale-105 transition flex items-center gap-2">
+                            Generate Design <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="section_result" class="hidden mb-12 animate-fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Your Engineered Solution</h2>
+            
+            <div class="flex flex-col lg:flex-row gap-8">
+                
+                <div class="w-full lg:w-7/12">
+                    <div id="panelCapture" class="bg-white p-8 rounded-xl shadow-xl border border-gray-200 relative flex flex-col items-center">
+                        <div class="w-full flex justify-between border-b pb-4 mb-6 text-xs uppercase font-bold text-gray-500">
+                            <div>Amps: <span id="resAmps" class="text-gray-800">0A</span></div>
+                            <div>Busbar: <span id="resBusbar" class="text-loopOrange">-</span></div>
+                            <div>IP: <span id="resIP" class="text-loopGreen">IP54</span></div>
+                        </div>
+
+                        <div id="panelBox" class="w-80 bg-gray-200 border-[3px] border-gray-600 relative flex flex-col shadow-inner" style="min-height: 520px;">
+                            <div id="visCanopy" class="hidden absolute -top-6 left-0 w-full h-6 bg-gray-500 rounded-t-lg border-b border-gray-700 shadow-sm"></div>
+                            <div id="visLinksL" class="hidden absolute -left-3 top-20 w-3 h-40 bg-yellow-400 border border-black opacity-60 extension-pattern shadow-lg"></div>
+                            <div id="visLinksR" class="hidden absolute -right-3 top-20 w-3 h-40 bg-yellow-400 border border-black opacity-60 extension-pattern shadow-lg"></div>
+
+                            <div class="h-32 w-full border-b-2 border-gray-400 bg-gray-300 p-3 flex justify-between items-center relative z-10">
+                                <div class="w-16 h-16 bg-black border-2 border-gray-500 rounded flex flex-col items-center justify-center shadow-lg">
+                                    <span class="text-[9px] text-green-500 font-mono">MFM</span>
+                                </div>
+                                <div class="flex flex-col gap-1 items-end">
+                                    <div id="visIoT" class="hidden px-2 py-0.5 bg-blue-600 text-[8px] font-bold text-white rounded shadow-sm">IoT</div>
+                                    <div id="visFire" class="hidden w-5 h-10 bg-red-500 border-2 border-white rounded shadow-sm fire-pattern"></div>
+                                </div>
+                                <div class="absolute bottom-3 left-3 right-3 h-3 busbar-gradient opacity-60 rounded-full"></div>
+                            </div>
+
+                            <div class="flex-1 w-full border-b-2 border-gray-400 bg-gray-300 p-4 relative z-10">
+                                <div id="glandTop" class="hidden absolute top-0 left-0 w-full h-5 bg-gray-400 border-b border-dashed border-gray-600 text-[6px] text-gray-700 flex items-center justify-center uppercase font-bold">Gland Plate (Top)</div>
+                                <div id="lblIncomer" class="text-[9px] font-bold text-gray-500 mb-3 text-center uppercase tracking-wider">Inputs</div>
+                                <div id="incomerGrid" class="flex flex-wrap justify-center gap-2"></div>
+                            </div>
+
+                            <div class="h-40 w-full bg-gray-300 p-3 flex items-end justify-center gap-6 relative z-10">
+                                <div class="flex flex-col items-center w-1/2">
+                                    <div class="w-20 h-28 bg-gray-400 border-2 border-gray-600 rounded flex flex-col items-center justify-end pb-3 relative shadow-md">
+                                        <span id="labelMain" class="text-[7px] font-bold absolute -top-2 bg-blue-700 text-white px-2 py-0.5 rounded shadow-sm">GRID</span>
+                                        <div class="w-5 h-10 bg-black rounded-sm border border-gray-700"></div>
+                                    </div>
+                                </div>
+                                <div id="visSecOut" class="hidden flex-col items-center w-1/2 border-l-2 border-gray-400 pl-4 border-dashed">
+                                    <div class="w-14 h-24 bg-orange-200 border-2 border-orange-400 rounded flex flex-col items-center justify-end pb-3 relative shadow-md">
+                                        <span class="text-[6px] font-bold text-white absolute -top-2 bg-orange-500 px-2 py-0.5 rounded shadow-sm">BACKUP</span>
+                                        <div class="w-4 h-8 bg-black rounded-sm"></div>
+                                    </div>
+                                </div>
+                                <div id="glandBottom" class="absolute bottom-0 left-0 w-full h-5 bg-gray-400 border-t border-dashed border-gray-600 text-[6px] text-gray-700 flex items-center justify-center uppercase font-bold">Gland Plate (Bottom)</div>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-xs text-gray-400">*Visualization is indicative. Final GA provided after order.</p>
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-5/12 space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 mb-4">Action</h3>
+                        <button onclick="generatePDF()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-lg transition flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i> Download Official Design Report
+                        </button>
+                    </div>
+
+                    <div class="bg-loopOrange/5 p-6 rounded-xl border border-loopOrange/20">
+                        <h3 class="font-bold text-loopOrange mb-4">Request Quotation</h3>
+                        <div class="space-y-3">
+                            <input type="text" id="custName" placeholder="Your Name" class="w-full bg-white border border-gray-300 p-2.5 rounded text-sm outline-none focus:border-loopOrange">
+                            <input type="tel" id="custPhone" placeholder="Mobile Number" class="w-full bg-white border border-gray-300 p-2.5 rounded text-sm outline-none focus:border-loopOrange">
+                            <input type="email" id="custEmail" placeholder="Email Address" class="w-full bg-white border border-gray-300 p-2.5 rounded text-sm outline-none focus:border-loopOrange">
+                            <button onclick="submitOrder()" id="btnSubmit" class="w-full bg-loopOrange hover:bg-orange-700 text-white font-bold py-3 rounded-lg shadow-md transition">
+                                Submit Order
+                            </button>
+                            <p id="msgResult" class="text-xs text-center font-bold hidden"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer id="contact-footer" class="bg-footerBg text-white py-12 border-t-4 border-loopOrange">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-2xl font-bold mb-1">Loop Solar</h3>
+                    <h5 class="text-xs text-gray-400 mb-8 uppercase">(Alphaloop Solar LLP - Panel Division)</h5>
+                    <h3 class="text-loopOrange font-bold mb-3 text-sm uppercase">Panel Manufacturing Contacts</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <span class="block font-bold text-white text-lg">Tarun Khurana</span>
+                            <span class="text-loopGreen text-xs uppercase font-bold">Managing Partner</span>
+                            <a href="tel:+919971136369" class="block text-gray-300 hover:text-loopOrange mt-2">+91-9971136369</a>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <span class="block font-bold text-white text-lg">Jasmeet Khurana</span>
+                            <span class="text-loopGreen text-xs uppercase font-bold">Head - Projects</span>
+                            <a href="mailto:info@loopsolar.com" class="block text-gray-300 hover:text-loopOrange mt-2">info@loopsolar.com</a>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold mb-6 border-b border-gray-700 pb-2">HQ Address</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">715, Emaar Emerald Plaza, Golf Course Extension Road, Sector 65, Gurgaon - 122101, Haryana</p>
+                </div>
+            </div>
+            <div class="text-center text-gray-500 text-xs mt-12 pt-6 border-t border-gray-800">© 2026, Alphaloop Solar LLP</div>
+        </div>
+    </footer>
+
+    <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPMF8oVijDevtQ9T2i_IP7UN-v6QhcuqxIyfogObdLGuW9foTc7NNS6581HIPlw0eH/exec"; 
+    let currentScenario = '';
+
+    // --- STEP 0: HISTORY HANDLING (FIX FOR BACK BUTTON) ---
+    window.addEventListener('load', function() {
+        history.replaceState({step: 'scenario'}, "Scenario", "");
+    });
+
+    window.onpopstate = function(event) {
+        document.getElementById('section_scenario').classList.add('hidden');
+        document.getElementById('section_form').classList.add('hidden');
+        document.getElementById('section_result').classList.add('hidden');
+
+        if (event.state && event.state.step === 'form') {
+            document.getElementById('section_form').classList.remove('hidden');
+        } else if (event.state && event.state.step === 'result') {
+            document.getElementById('section_result').classList.remove('hidden');
+        } else {
+            document.getElementById('section_scenario').classList.remove('hidden');
+        }
+    };
+
+    // --- STEP 1: INLINE SELECTION LOGIC (UPDATED WITH AUTO-SCROLL) ---
+    function toggleSubOptions(category, cardElement) {
+        // 1. Highlight Visuals
+        document.querySelectorAll('.step-card').forEach(c => c.classList.remove('step-active'));
+        cardElement.classList.add('step-active');
+
+        // 2. Prepare Container
+        const container = document.getElementById('subOptionsContainer');
+        const btnContainer = document.getElementById('subButtons');
+        container.classList.remove('hidden');
+        btnContainer.innerHTML = ''; 
+
+        // 3. Populate Buttons
+        if(category === 'solar') {
+            btnContainer.innerHTML = `
+                <button onclick="openForm('new_hybrid')" class="w-full sm:w-auto px-6 py-4 bg-white border border-gray-300 rounded-lg hover:border-loopOrange hover:text-loopOrange font-bold text-gray-700 shadow-sm transition">New Building</button>
+                <button onclick="openForm('retrofit')" class="w-full sm:w-auto px-6 py-4 bg-white border border-gray-300 rounded-lg hover:border-loopOrange hover:text-loopOrange font-bold text-gray-700 shadow-sm transition">Load Expansion</button>
+            `;
+        } else if(category === 'construction') {
+            btnContainer.innerHTML = `
+                <button onclick="openForm('new_hybrid')" class="w-full sm:w-auto px-6 py-4 bg-white border border-gray-300 rounded-lg hover:border-loopOrange hover:text-loopOrange font-bold text-gray-700 shadow-sm transition">Adding Solar</button>
+                <button onclick="openForm('new_load')" class="w-full sm:w-auto px-6 py-4 bg-white border border-gray-300 rounded-lg hover:border-loopOrange hover:text-loopOrange font-bold text-gray-700 shadow-sm transition">No Solar</button>
+            `;
+        } else if(category === 'ground') {
+            btnContainer.innerHTML = `
+                <button onclick="openForm('ground_captive')" class="w-full sm:w-auto px-6 py-4 bg-white border border-gray-300 rounded-lg hover:border-loopOrange hover:text-loopOrange font-bold text-gray-700 shadow-sm transition">Captive Use</button>
+                <button onclick="openForm('ground_utility')" class="w-full sm:w-auto px-6 py-4 bg-white border border-gray-300 rounded-lg hover:border-loopOrange hover:text-loopOrange font-bold text-gray-700 shadow-sm transition">Grid Supply</button>
+            `;
+        }
+
+        // 4. AUTO SCROLL (THE MOBILE FIX)
+        // Wait 100ms for DOM to render, then scroll smoothly
+        setTimeout(() => {
+            const target = document.getElementById('scrollTarget');
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+
+    // --- STEP 2: OPEN FORM ---
+    function openForm(scenario) {
+        currentScenario = scenario;
+        history.pushState({step: 'form', scenario: scenario}, "Form", "#configure");
+
+        document.getElementById('section_scenario').classList.add('hidden');
+        document.getElementById('section_form').classList.remove('hidden');
+        
+        // Auto scroll to top when changing pages
+        window.scrollTo(0,0);
+
+        const title = document.getElementById('formContext');
+        const divSolar = document.getElementById('group_solar');
+        const divLoad = document.getElementById('group_load');
+        const divSys = document.getElementById('field_sysType');
+
+        divSolar.classList.remove('hidden');
+        divLoad.classList.add('hidden');
+        divSys.classList.remove('hidden');
+
+        if(scenario === 'retrofit') title.innerText = "Retrofit Solar ACDB";
+        else if(scenario === 'new_hybrid') {
+            title.innerText = "New Hybrid PCC";
+            divLoad.classList.remove('hidden');
+            document.getElementById('sysType').value = "Hybrid";
+        }
+        else if(scenario === 'new_load') {
+            title.innerText = "Standard PCC (No Solar)";
+            divSolar.classList.add('hidden');
+            divSys.classList.add('hidden');
+            divLoad.classList.remove('hidden');
+        }
+        else if(scenario === 'ground_utility') {
+            title.innerText = "Utility Scale (800V)";
+            document.getElementById('voltage').value = "800";
+            document.getElementById('location').value = "Outdoor";
+        }
+        else title.innerText = "Ground Mount (Captive)";
+    }
+
+    // --- HELPER: CABLE SIZING LOGIC ---
+    function getCableSchedule(amps) {
+        if(amps <= 63) return { runs: 1, size: "25 sqmm", type: "Cu" };
+        if(amps <= 100) return { runs: 1, size: "50 sqmm", type: "Al" };
+        if(amps <= 160) return { runs: 1, size: "95 sqmm", type: "Al" };
+        if(amps <= 250) return { runs: 1, size: "185 sqmm", type: "Al" };
+        if(amps <= 315) return { runs: 1, size: "300 sqmm", type: "Al" };
+        if(amps <= 400) return { runs: 2, size: "185 sqmm", type: "Al" };
+        if(amps <= 630) return { runs: 2, size: "300 sqmm", type: "Al" };
+        if(amps <= 800) return { runs: 3, size: "300 sqmm", type: "Al" };
+        if(amps <= 1000) return { runs: 4, size: "300 sqmm", type: "Al" };
+        if(amps <= 1250) return { runs: 5, size: "300 sqmm", type: "Al" };
+        return { runs: Math.ceil(amps/250), size: "300 sqmm", type: "Al" };
+    }
+
+    // --- STEP 3: GENERATE RESULT ---
+    function generateResult() {
+        history.pushState({step: 'result'}, "Result", "#result");
+        document.getElementById('section_form').classList.add('hidden');
+        document.getElementById('section_result').classList.remove('hidden');
+        window.scrollTo(0,0);
+        calculateAndDraw();
+    }
+
+    function calculateAndDraw() {
+        const qty = parseInt(document.getElementById('invQty').value) || 0;
+        const solarKw = parseFloat(document.getElementById('plantCapacity').value) || 0;
+        const loadKw = parseFloat(document.getElementById('loadCapacity').value) || 0;
+        const volt = parseInt(document.getElementById('voltage').value);
+        const sys = document.getElementById('sysType').value;
+        const loc = document.getElementById('location').value;
+        const entry = document.getElementById('cableEntry').value;
+        const isExp = document.getElementById('isExpansion').value;
+
+        let totalKw = solarKw;
+        if(currentScenario === 'new_load') totalKw = loadKw;
+        if(currentScenario === 'new_hybrid') totalKw = Math.max(solarKw, loadKw);
+
+        let amps = 0;
+        if(volt === 415) amps = Math.ceil((totalKw * 1000) / (415 * 1.732 * 0.9));
+        else if(volt === 800) amps = Math.ceil((totalKw * 1000) / (800 * 1.732 * 0.9));
+        else amps = Math.ceil((totalKw * 1000) / (230 * 0.9));
+
+        let bar = "160A";
+        let barWidthPx = 10; 
+        if(amps > 125) { bar = "250A"; barWidthPx = 14; }
+        if(amps > 225) { bar = "400A"; barWidthPx = 18; }
+        if(amps > 360) { bar = "630A"; barWidthPx = 24; }
+        if(amps > 580) { bar = "1000A"; barWidthPx = 32; }
+        if(amps > 900) { bar = "1250A"; barWidthPx = 40; }
+
+        let kA = "25kA";
+        if(amps > 400) kA = "35kA";
+        if(amps > 1000) kA = "50kA";
+
+        const cableInfo = getCableSchedule(amps);
+        const heatWatts = Math.ceil(amps * 1.5);
+
+        document.getElementById('resAmps').innerHTML = `${amps}A <span class="text-[9px] text-gray-400">(${kA})</span>`;
+        document.getElementById('resBusbar').innerText = `Al ${bar}`;
+        document.getElementById('resIP').innerText = loc === 'Outdoor' ? "IP65" : "IP54";
+
+        const busbarVis = document.querySelector('.busbar-gradient');
+        busbarVis.style.height = `${barWidthPx}px`;
+
+        if(loc === 'Outdoor') document.getElementById('visCanopy').classList.remove('hidden');
+        else document.getElementById('visCanopy').classList.add('hidden');
+
+        if(isExp === 'Yes') {
+            document.getElementById('visLinksL').classList.remove('hidden');
+            document.getElementById('visLinksR').classList.remove('hidden');
+        } else {
+            document.getElementById('visLinksL').classList.add('hidden');
+            document.getElementById('visLinksR').classList.add('hidden');
+        }
+
+        const glandTop = document.getElementById('glandTop');
+        const glandBottom = document.getElementById('glandBottom');
+        let holesHTML = '';
+        for(let i=0; i<cableInfo.runs; i++) {
+            holesHTML += `<div class="w-3 h-3 rounded-full bg-gray-800 border border-gray-500 mx-0.5" title="${cableInfo.size}"></div>`;
+        }
+        const glandContent = `<div class="flex items-center gap-1 absolute top-1 left-0 right-0 justify-center z-20">${holesHTML}</div>`;
+
+        if(entry === 'Top') {
+            glandTop.classList.remove('hidden');
+            glandTop.innerHTML = glandContent + '<span class="text-[6px] text-gray-500 absolute bottom-[-8px] w-full text-center">ENTRY</span>';
+            glandBottom.classList.add('hidden');
+        } else {
+            glandTop.classList.add('hidden');
+            glandBottom.classList.remove('hidden');
+            glandBottom.innerHTML = glandContent + '<span class="text-[6px] text-gray-500 absolute top-[-8px] w-full text-center">ENTRY</span>';
+        }
+
+        const grid = document.getElementById('incomerGrid');
+        grid.innerHTML = '';
+        if(currentScenario === 'new_load') {
+            if(amps > 800) {
+                 grid.innerHTML = '<div class="w-24 h-28 bg-gray-200 border-2 border-gray-600 rounded flex flex-col items-center justify-center shadow-lg relative"><div class="absolute top-2 left-2 w-4 h-4 border border-black rounded-full"></div><div class="text-[9px] font-bold">ACB</div><div class="w-16 h-8 bg-black mt-2 rounded-sm border border-gray-500"></div></div>';
+            } else {
+                 grid.innerHTML = '<div class="w-16 h-20 bg-gray-400 border border-gray-600 rounded flex items-center justify-center shadow-md"><span class="text-[8px] font-bold text-white">MCCB</span></div>';
+            }
+            document.getElementById('lblIncomer').innerText = "Main Incomer";
+        } else {
+            document.getElementById('lblIncomer').innerText = "PV Inverters";
+            const displayQty = Math.min(qty, 6);
+            for(let i=0; i<displayQty; i++) {
+                let d = document.createElement('div');
+                d.className = "w-8 h-12 bg-white border border-gray-500 rounded-sm flex flex-col items-center justify-end p-1 shadow-sm transition hover:scale-110";
+                d.innerHTML = `<div class="w-1 h-3 bg-black"></div>`;
+                grid.appendChild(d);
+            }
+            if(qty > 6) {
+                let more = document.createElement('div');
+                more.className = "text-[9px] font-bold text-gray-500 self-center";
+                more.innerText = `+${qty-6}`;
+                grid.appendChild(more);
+            }
+        }
+
+        const visSecOut = document.getElementById('visSecOut');
+        const labelMain = document.getElementById('labelMain');
+        
+        if(currentScenario === 'new_load') {
+            labelMain.innerText = "LOADS";
+            visSecOut.classList.add('hidden'); visSecOut.classList.remove('flex');
+        } else {
+            if(sys === 'Hybrid') {
+                labelMain.innerText = "GRID";
+                visSecOut.classList.remove('hidden'); visSecOut.classList.add('flex');
+            } else if (sys === 'Off-Grid') {
+                labelMain.innerText = "LOAD";
+                visSecOut.classList.add('hidden'); visSecOut.classList.remove('flex');
+            } else {
+                labelMain.innerText = "GRID";
+                visSecOut.classList.add('hidden'); visSecOut.classList.remove('flex');
+            }
+        }
+
+        document.getElementById('visIoT').style.display = document.getElementById('feat_iot').checked ? 'block' : 'none';
+        document.getElementById('visFire').style.display = document.getElementById('feat_fire').checked ? 'block' : 'none';
+        
+        window.calculatedData = { amps, bar, kA, cableInfo, heatWatts };
+    }
+
+    // --- PDF GENERATOR ---
+    async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const orange = [247, 89, 0];
+        const gray = [40, 40, 40];
+        const lightGray = [240, 240, 240];
+        
+        const getVal = (id) => document.getElementById(id).value;
+        const getText = (id) => document.getElementById(id).innerText;
+        const data = window.calculatedData;
+
+        doc.setFillColor(...gray);
+        doc.rect(0, 0, 210, 40, 'F'); 
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24); doc.setFont("helvetica", "bold");
+        doc.text("LOOP SOLAR", 15, 20);
+        doc.setFontSize(10); doc.setFont("helvetica", "normal");
+        doc.text("Electrical Panel Design Report", 15, 28);
+        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 160, 28);
+
+        let y = 55;
+
+        doc.setTextColor(...orange);
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        doc.text("1. General Technical Particulars (GTP)", 15, y);
+        y += 8;
+
+        const gtpData = [
+            ["Parameter", "Specification"],
+            ["Application", currentScenario.toUpperCase().replace('_', ' ')],
+            ["System Voltage", getVal('voltage') + "V AC"],
+            ["Rated Current", `${data.amps}A`],
+            ["Short Circuit Rating", data.kA],
+            ["Busbar Grade", `Aluminium Alloy (E91E), ${data.bar}`],
+            ["Rec. Cable (Al)", `${data.cableInfo.runs} Runs x ${data.cableInfo.size}`],
+            ["Est. Heat Dissipation", `${data.heatWatts} Watts`],
+            ["Ingress Protection", getText('resIP')],
+            ["Cable Entry", getVal('cableEntry')]
+        ];
+
+        doc.autoTable({
+            startY: y,
+            head: [['Parameter', 'Value']],
+            body: gtpData.slice(1),
+            theme: 'grid',
+            headStyles: { fillColor: orange, textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 10, cellPadding: 3, lineColor: [200, 200, 200] },
+            columnStyles: { 0: { fontStyle: 'bold', width: 80, fillColor: lightGray } }
+        });
+
+        doc.addPage();
+        y = 20;
+        doc.setTextColor(...orange);
+        doc.setFontSize(16);
+        doc.text("2. Bill of Materials (BoQ)", 15, y);
+        y += 10;
+
+        const boqRows = [];
+        const invQty = parseInt(getVal('invQty')) || 0;
+        const sysType = getVal('sysType');
+        const make = "Schneider / L&T / ABB"; 
+
+        const brkType = data.amps > 800 ? "ACB (Air Circuit Breaker)" : "MCCB (Molded Case)";
+        const brkRating = data.bar; 
+
+        if(currentScenario === 'new_load') {
+            boqRows.push(["Incomer", "1 No.", `${brkType} 4P Fixed, ${data.kA} (${brkRating})`, make]);
+        } else {
+            boqRows.push(["Solar Incomer", `${invQty} Nos.`, "MCCB 3P/4P Fixed (PV Duty)", make]);
+        }
+
+        if(sysType === 'Hybrid' && currentScenario !== 'new_load') {
+            boqRows.push(["Grid Breaker", "1 No.", `MCCB 4P ${data.bar} (Source Changeover)`, make]);
+            boqRows.push(["Backup Breaker", "1 No.", `MCCB 4P ${data.bar} (Load)`, make]);
+        } else {
+            boqRows.push(["Outgoing Breaker", "1 No.", `MCCB 4P ${data.bar}`, make]);
+        }
+
+        boqRows.push(["Metering", "1 Set", "MFM Cl 1.0, RS485 + CTs", "Secure/L&T"]);
+        if(document.getElementById('feat_spd').checked) 
+            boqRows.push(["Surge Protection", "1 Set", "AC SPD Type 2 (40kA)", "Phoenix/Citel"]);
+        if(document.getElementById('feat_dg').checked) 
+            boqRows.push(["Protection Relay", "1 No.", "Reverse Power Protection Relay", "Genius/Eqv"]);
+        if(document.getElementById('feat_fire').checked) 
+            boqRows.push(["Safety", "1 Unit", "Aerosol Fire Suppression Cartridge", "FireStop"]);
+        if(document.getElementById('feat_iot').checked) 
+            boqRows.push(["Monitoring", "1 Set", "IoT Gateway (Modbus/4G)", "Loop Solar"]);
+
+        const loc = getVal('location');
+        boqRows.push(["Enclosure", "1 Set", `CRCA 14/16G - ${loc} (RAL 7035)`, "Fabricated"]);
+
+        doc.autoTable({
+            startY: y,
+            head: [['Item Category', 'Qty', 'Description', 'Approved Make']],
+            body: boqRows,
+            theme: 'striped',
+            headStyles: { fillColor: gray, textColor: 255 },
+            styles: { fontSize: 10, cellPadding: 3 },
+            columnStyles: { 0: { fontStyle: 'bold' } }
+        });
+
+        doc.addPage();
+        y = 20;
+        doc.setTextColor(...orange);
+        doc.setFontSize(16);
+        doc.text("3. Panel General Arrangement (GA)", 15, y);
+        y += 10;
+
+        const element = document.getElementById('panelCapture');
+        const btn = element.querySelector('button'); 
+        if(btn) btn.style.display = 'none';
+
+        const canvas = await html2canvas(element, { scale: 3, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        if(btn) btn.style.display = 'block';
+
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = 180;
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        doc.addImage(imgData, 'PNG', 15, y, pdfWidth, pdfHeight);
+
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(8); doc.setTextColor(150);
+        for(let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.text("Disclaimer: Preliminary design generated by Loop Solar Studio.", 15, 285);
+            doc.text(`Page ${i} of ${pageCount}`, 190, 285, { align: 'right' });
+        }
+
+        doc.save("LoopSolar_Professional_Design.pdf");
+    }
+
+    function submitOrder() {
+        const btn = document.getElementById('btnSubmit');
+        const msg = document.getElementById('msgResult');
+        const name = document.getElementById('custName').value;
+        const phone = document.getElementById('custPhone').value;
+
+        if(!name || !phone) { alert("Please enter Name and Phone"); return; }
+
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loader"></div>';
+        msg.className = "hidden";
+
+        const smarts = [];
+        if(document.getElementById('feat_iot').checked) smarts.push("IoT");
+        if(document.getElementById('feat_dg').checked) smarts.push("DG Sync");
+
+        const payload = {
+            name: name,
+            phone: phone,
+            email: document.getElementById('custEmail').value,
+            scenario: currentScenario,
+            sys: document.getElementById('sysType').value,
+            cap: document.getElementById('plantCapacity').value,
+            inv: document.getElementById('invQty').value,
+            smart: smarts.join(", ")
+        };
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            btn.innerHTML = 'Sent Successfully';
+            btn.classList.remove('bg-loopOrange');
+            btn.classList.add('bg-green-600');
+            msg.innerText = "Our team will contact you shortly.";
+            msg.className = "text-xs text-center font-bold text-green-600 mt-2 block";
+        });
+    }
+    </script>
+
+</body>
+</html>
